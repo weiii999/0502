@@ -1,27 +1,53 @@
 let capture;
+let graphics; // 用於儲存與 video 畫面相同大小的圖形緩衝區
 
 function setup() {
-  createCanvas(windowWidth, windowHeight); // 建立全螢幕畫布
-  background('#e7c6ff'); // 設定背景顏色為紫色
-
-  capture = createCapture(VIDEO); // 啟用攝影機擷取影像
+  createCanvas(windowWidth, windowHeight); // 全螢幕畫布
+  background('#778da9'); // 設定背景顏色
+  capture = createCapture(VIDEO); // 擷取攝影機影像
   capture.size(windowWidth * 0.8, windowHeight * 0.8); // 設定影像大小為視窗的 80%
-  capture.hide(); // 隱藏原始影像，僅顯示繪製的影像
+  capture.hide(); // 隱藏原始影像，僅顯示在畫布上
+
+  // 建立與 video 畫面相同大小的圖形緩衝區
+  graphics = createGraphics(capture.width, capture.height);
 }
 
 function draw() {
-  background('#e7c6ff'); // 每次繪製時重設背景顏色
-  let x = (width - capture.width) / 2; // 計算影像的水平居中位置
-  let y = (height - capture.height) / 2; // 計算影像的垂直居中位置
+  background('#778da9'); // 確保背景顏色一致
 
-  push(); // 儲存當前繪圖設定
-  translate(width, 0); // 將原點移動到畫布右上角
-  scale(-1, 1); // 水平翻轉畫布
-  image(capture, x, y); // 繪製翻轉後的影像
-  pop(); // 恢復繪圖設定
+  // 設定 graphics 的背景為黑色
+  graphics.background(0);
+
+  // 水平翻轉 graphics 並繪製 capture 的影像
+  graphics.push(); // 儲存當前狀態
+  graphics.translate(graphics.width, 0); // 將原點移到右側
+  graphics.scale(-1, 1); // 水平翻轉
+  graphics.image(capture, 0, 0, graphics.width, graphics.height); // 繪製影像
+  graphics.pop(); // 恢復狀態
+
+  // 在 graphics 上繪製圓形，顏色來自 capture 的相對位置
+  for (let x = 0; x < graphics.width; x += 20) {
+    for (let y = 0; y < graphics.height; y += 20) {
+      // 從 capture 中取得相對應位置的顏色
+      let col = capture.get(x, y);
+      graphics.fill(col); // 設定圓形顏色
+      graphics.noStroke(); // 移除圓形邊框
+      graphics.ellipse(x + 10, y + 10, 15, 15); // 繪製圓形，居中於單位格
+    }
+  }
+
+  // 計算影像在畫布上的居中位置
+  let x = (windowWidth - graphics.width) / 2;
+  let y = (windowHeight - graphics.height) / 2;
+
+  // 將圖形緩衝區的內容繪製到畫布上
+  image(graphics, x, y, graphics.width, graphics.height);
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight); // 動態調整畫布大小
-  capture.size(windowWidth * 0.8, windowHeight * 0.8); // 動態調整影像大小
+  resizeCanvas(windowWidth, windowHeight); // 當視窗大小改變時調整畫布大小
+  capture.size(windowWidth * 0.8, windowHeight * 0.8); // 調整影像大小
+
+  // 重新建立與 video 畫面相同大小的圖形緩衝區
+  graphics = createGraphics(capture.width, capture.height);
 }
